@@ -9,17 +9,17 @@ export function QueryInterface(): React.ReactElement {
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<QueryResponse | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     if (!query.trim()) return;
 
     setIsLoading(true);
-    try {
-      // API call will be implemented here
+    // API call will be implemented here
+    // For now, simulate loading
+    setTimeout(() => {
       setResponse(null);
-    } finally {
       setIsLoading(false);
-    }
+    }, 1000);
   };
 
   return (

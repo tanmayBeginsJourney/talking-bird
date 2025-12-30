@@ -13,16 +13,16 @@ export function DocumentUpload(): React.ReactElement {
     }
   };
 
-  const handleUpload = async (): Promise<void> => {
+  const handleUpload = (): void => {
     if (!file) return;
 
     setIsUploading(true);
-    try {
-      // API call will be implemented here
-    } finally {
+    // API call will be implemented here
+    // For now, simulate upload
+    setTimeout(() => {
       setIsUploading(false);
       setFile(null);
-    }
+    }, 1000);
   };
 
   return (
