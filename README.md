@@ -1,70 +1,242 @@
-# Talking Bird 🐦
+# Talking Bird
 
 Document-grounded AI assistant for Office of Research. Answers queries using **only** uploaded documents with strict source attribution.
 
-## Features
+## What It Does
 
-- Natural language queries over uploaded documents
-- Semantic search with similarity thresholds
-- Grounded answers with source citations
+- Upload PDFs, DOCX, or TXT files
+- Ask natural language questions
+- Get answers grounded **only** in your documents
+- See source citations with page numbers
 - Confidence scoring (high/medium/low)
-- "Not sure" fallback when answers aren't in documents
-- Document management (upload, list, delete)
-- JWT-based authentication
+- Refuses to answer if info isn't in documents
 
 ## Tech Stack
 
-- **Backend:** FastAPI, PostgreSQL, Qdrant, OpenAI API
-- **Frontend:** Next.js 14, TypeScript, Tailwind CSS
-- **Embeddings:** sentence-transformers/all-MiniLM-L6-v2
+| Component | Technology |
+|-----------|------------|
+| Backend | FastAPI + Python 3.11 |
+| Database | PostgreSQL 16 |
+| Vector DB | Qdrant |
+| LLM | Groq (Llama 3.3 70B) - **FREE** |
+| Embeddings | sentence-transformers/all-MiniLM-L6-v2 |
+| Frontend | Next.js 14 + TypeScript + Tailwind |
 
-## Quick Start
+---
+
+## Quick Start (5 minutes)
 
 ### Prerequisites
 
-- Docker & Docker Compose
-- OpenAI API key
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+- [Groq API Key](https://console.groq.com/keys) (free, takes 30 seconds)
 
-### 1. Clone and configure
+### 1. Clone the repo
 
 ```bash
 git clone <repository-url>
 cd talking-bird
-cp env.example .env
-# Edit .env and add your OPENAI_API_KEY
 ```
 
-### 2. Start with Docker Compose
+### 2. Create environment file
+
+```bash
+# Copy the example env file
+cp .env.example .env
+```
+
+Edit `.env` and add your Groq API key:
+```properties
+GROQ_API_KEY=gsk_your_key_here
+```
+
+### 3. Start everything
 
 ```bash
 docker-compose up -d
 ```
 
-Services:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-- Qdrant: http://localhost:6333
+Wait ~2 minutes for first build (downloads ML models).
 
-### 3. Run database migrations
+### 4. Create admin user
 
 ```bash
-docker-compose exec backend alembic upgrade head
+docker-compose exec backend python scripts/create_admin.py
 ```
 
-## Development Setup
+Default credentials: `admin@talkingbird.com` / `admin123`
 
-### Backend
+### 5. Access the app
+
+| Service | URL |
+|---------|-----|
+| API Docs (Swagger) | http://localhost:8000/docs |
+| Backend Health | http://localhost:8000/health |
+| Frontend | http://localhost:3000 |
+| Qdrant Dashboard | http://localhost:6333/dashboard |
+
+---
+
+## Using the API
+
+### Step 1: Login
+
+**POST** `/api/v1/auth/login`
+```json
+{
+  "email": "admin@talkingbird.com",
+  "password": "admin123"
+}
+```
+
+Copy the `access_token` from response.
+
+### Step 2: Upload Documents
+
+**POST** `/api/v1/documents/upload`
+
+- Click "Authorize" in Swagger and paste your token
+- Upload PDF, DOCX, or TXT files (max 50MB)
+
+### Step 3: Ask Questions
+
+**POST** `/api/v1/query`
+```json
+{
+  "query": "What programs does the university offer?",
+  "max_chunks": 5
+}
+```
+
+Response includes:
+- `answer` - Grounded response with citations
+- `confidence` - high/medium/low
+- `sources` - Document excerpts with page numbers
+- `processing_time_ms` - Response time
+
+---
+
+## Project Structure
+
+```
+talking-bird/
+├── .env                    # Environment variables (create from .env.example)
+├── docker-compose.yml      # Container orchestration
+├── backend/
+│   ├── app/
+│   │   ├── api/            # REST endpoints (auth, documents, query)
+│   │   ├── core/           # Database, security, vector store
+│   │   ├── models/         # SQLAlchemy + Pydantic models
+│   │   └── services/       # Document processing, retrieval, LLM
+│   ├── scripts/            # Admin scripts
+│   ├── uploads/            # Uploaded documents (gitignored)
+│   └── requirements.txt
+├── frontend/
+│   └── src/
+│       ├── app/            # Next.js pages
+│       ├── components/     # React components
+│       └── lib/            # API client
+└── docs/                   # Sample documents for testing
+```
+
+---
+
+## API Reference
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/v1/auth/login` | Get JWT token | No |
+| GET | `/api/v1/auth/me` | Current user info | Yes |
+| POST | `/api/v1/documents/upload` | Upload document | Yes |
+| GET | `/api/v1/documents` | List documents | Yes |
+| DELETE | `/api/v1/documents/{id}` | Delete document | Yes |
+| POST | `/api/v1/query` | Submit query | Yes |
+| GET | `/health` | Health check | No |
+
+---
+
+## Configuration
+
+All config is via environment variables in `.env`:
+
+```properties
+# Required
+GROQ_API_KEY=gsk_...              # Get from console.groq.com
+
+# Database (defaults work with Docker)
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/talkingbird
+
+# Retrieval tuning
+TOP_K_CHUNKS=5                    # Chunks to retrieve per query
+SIMILARITY_THRESHOLD=0.65         # Min similarity (0-1)
+CHUNK_SIZE=512                    # Characters per chunk
+CHUNK_OVERLAP=128                 # Overlap between chunks
+
+# Security (change in production!)
+SECRET_KEY=change-this-in-production
+```
+
+---
+
+## Common Commands
+
+```bash
+# Start all services
+docker-compose up -d
+
+# Stop all services
+docker-compose down
+
+# View logs
+docker-compose logs backend --follow
+
+# Rebuild after code changes
+docker-compose build backend
+docker-compose up -d backend
+
+# Access backend shell
+docker-compose exec backend bash
+
+# Check container status
+docker-compose ps
+```
+
+---
+
+## Troubleshooting
+
+### Backend won't start
+```bash
+docker-compose logs backend --tail 50
+```
+
+Common issues:
+- **"GROQ_API_KEY not set"** → Add your key to `.env`
+- **"Can't connect to postgres"** → Wait for postgres to be healthy, or run `docker-compose down && docker-compose up -d`
+
+### Queries return "Not sure" for everything
+- Check if documents processed: `GET /api/v1/documents` should show `processing_status: "processed"` and `num_pages` populated
+- Scanned PDFs (images) won't work - only text-based PDFs
+
+### Slow first startup
+Normal - downloads ~500MB of ML models on first run. Subsequent starts are fast.
+
+---
+
+## Development
+
+### Backend (without Docker)
 
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+venv\Scripts\activate        # Windows
+source venv/bin/activate     # Mac/Linux
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-### Frontend
+### Frontend (without Docker)
 
 ```bash
 cd frontend
@@ -72,50 +244,16 @@ npm install
 npm run dev
 ```
 
-## Project Structure
+---
 
-```
-talking-bird/
-├── backend/
-│   ├── app/
-│   │   ├── api/          # API routes
-│   │   ├── core/         # Database, security, vector store
-│   │   ├── models/       # SQLAlchemy & Pydantic models
-│   │   ├── services/     # Business logic
-│   │   └── utils/        # Logging, exceptions
-│   ├── tests/
-│   └── alembic/          # Database migrations
-├── frontend/
-│   └── src/
-│       ├── app/          # Next.js pages
-│       ├── components/   # React components
-│       └── lib/          # API client, types
-├── docker-compose.yml
-└── .env.example
-```
+## Known Limitations
 
-## API Endpoints
+- **Scanned PDFs** - Not supported (need OCR)
+- **Large files** - 16MB+ PDFs may take 10-30 seconds to process
+- **No user registration** - Only admin user via script
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /api/v1/auth/login | User login |
-| POST | /api/v1/documents/upload | Upload document |
-| GET | /api/v1/documents | List documents |
-| DELETE | /api/v1/documents/{id} | Delete document |
-| POST | /api/v1/query | Submit query |
-| GET | /api/v1/queries/history | Query history |
-| GET | /health | Health check |
-
-## Configuration
-
-See `env.example` for all configuration options (rename to `.env`). Key settings:
-
-- `OPENAI_API_KEY` - Required for answer generation
-- `DATABASE_URL` - PostgreSQL connection string
-- `SIMILARITY_THRESHOLD` - Minimum cosine similarity (default: 0.65)
-- `TOP_K_CHUNKS` - Number of chunks to retrieve (default: 5)
+---
 
 ## License
 
 MIT
-

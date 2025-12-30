@@ -18,9 +18,9 @@ class Settings(BaseSettings):
     VECTOR_DB_PORT: int = 6333
     COLLECTION_NAME: str = "office_of_research_docs"
 
-    # LLM
-    OPENAI_API_KEY: str = ""
-    LLM_MODEL: str = "gpt-4"
+    # LLM (Groq)
+    GROQ_API_KEY: str = ""
+    LLM_MODEL: str = "llama-3.3-70b-versatile"
     LLM_TEMPERATURE: float = 0.0
 
     # Embeddings
@@ -43,6 +43,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 settings = Settings()

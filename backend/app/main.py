@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api import auth, documents, query
 from app.config import settings
 
 app = FastAPI(
@@ -22,6 +23,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include API routers
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(documents.router, prefix="/api/v1")
+app.include_router(query.router, prefix="/api/v1")
+
 
 @app.get("/health")
 async def health_check() -> dict[str, str]:
@@ -33,6 +39,3 @@ async def health_check() -> dict[str, str]:
 async def root() -> dict[str, str]:
     """Root endpoint."""
     return {"message": f"Welcome to {settings.APP_NAME} API"}
-
-
-
