@@ -9,7 +9,6 @@ export default function Home(): React.ReactElement {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Auto-login with hardcoded credentials for MVP
     const autoLogin = async (): Promise<void> => {
       try {
         const response = await api.login({
@@ -19,7 +18,7 @@ export default function Home(): React.ReactElement {
         api.setToken(response.access_token);
         setIsReady(true);
       } catch (err) {
-        setError("Failed to connect. Is the backend running?");
+        setError("Unable to connect to backend");
         console.error("Auto-login failed:", err);
       }
     };
@@ -28,48 +27,57 @@ export default function Home(): React.ReactElement {
   }, []);
 
   return (
-    <main className="min-h-screen" style={{ background: "var(--background)" }}>
-      <div className="container mx-auto px-4 py-16 max-w-4xl">
+    <main className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
+      {/* Subtle gradient overlay */}
+      <div 
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse at top, rgba(99, 102, 241, 0.08) 0%, transparent 50%)",
+        }}
+      />
+      
+      <div className="relative z-10 max-w-3xl mx-auto px-6 py-20">
         {/* Header */}
-        <header className="text-center mb-12 animate-fade-in">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <span className="text-5xl">🐦</span>
-            <h1 
-              className="text-4xl font-semibold tracking-tight"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Talking Bird
-            </h1>
-          </div>
+        <header className="text-center mb-16 animate-fade-in">
+          <h1 
+            className="text-5xl font-semibold mb-3"
+            style={{ color: "var(--text-primary)" }}
+          >
+            Talking Bird
+          </h1>
           <p 
             className="text-lg"
             style={{ color: "var(--text-secondary)" }}
           >
-            Ask questions about university documents
+            Ask questions about your documents
           </p>
         </header>
 
         {/* Main Content */}
         {error ? (
           <div 
-            className="text-center p-8 rounded-xl animate-fade-in"
+            className="text-center p-8 rounded-2xl animate-fade-in"
             style={{ 
-              background: "var(--card)", 
+              background: "var(--bg-secondary)", 
               border: "1px solid var(--border)" 
             }}
           >
-            <p style={{ color: "var(--error)" }} className="font-medium">
+            <p style={{ color: "var(--error)" }} className="font-medium mb-2">
               {error}
             </p>
             <p 
-              className="text-sm mt-2"
-              style={{ color: "var(--text-secondary)" }}
+              className="text-sm"
+              style={{ color: "var(--text-tertiary)" }}
             >
-              Make sure Docker is running with: docker-compose up -d
+              Run: docker-compose up -d
             </p>
           </div>
         ) : !isReady ? (
-          <div className="text-center animate-pulse-slow">
+          <div className="flex items-center justify-center gap-3">
+            <div 
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{ background: "var(--accent)" }}
+            />
             <p style={{ color: "var(--text-secondary)" }}>
               Connecting...
             </p>
@@ -82,10 +90,10 @@ export default function Home(): React.ReactElement {
 
         {/* Footer */}
         <footer 
-          className="text-center mt-16 text-sm"
-          style={{ color: "var(--text-secondary)" }}
+          className="text-center mt-20 text-sm"
+          style={{ color: "var(--text-tertiary)" }}
         >
-          Answers are grounded only in uploaded documents
+          Answers are grounded in uploaded documents only
         </footer>
       </div>
     </main>

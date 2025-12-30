@@ -23,7 +23,7 @@ export function QueryInterface(): React.ReactElement {
       const result = await api.submitQuery({ query: query.trim() });
       setResponse(result);
     } catch (err) {
-      setError("Something went wrong. Please try again.");
+      setError("Failed to get response. Please try again.");
       console.error("Query failed:", err);
     } finally {
       setIsLoading(false);
@@ -37,85 +37,77 @@ export function QueryInterface(): React.ReactElement {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Query Form */}
+    <div className="space-y-8">
+      {/* Search Input */}
       <form onSubmit={(e) => void handleSubmit(e)}>
         <div 
-          className="rounded-2xl p-2 shadow-sm"
+          className="relative rounded-2xl overflow-hidden"
           style={{ 
-            background: "var(--card)", 
-            border: "1px solid var(--border)" 
+            background: "var(--bg-secondary)",
+            border: "1px solid var(--border)",
           }}
         >
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask a question about the documents..."
-              className="flex-1 px-4 py-4 text-lg bg-transparent border-none focus:outline-none"
-              style={{ color: "var(--text-primary)" }}
-              maxLength={500}
-              disabled={isLoading}
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !query.trim()}
-              className="px-8 py-4 rounded-xl font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90"
-              style={{ 
-                background: isLoading ? "var(--text-secondary)" : "var(--accent)",
-              }}
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle 
-                      className="opacity-25" 
-                      cx="12" cy="12" r="10" 
-                      stroke="currentColor" 
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path 
-                      className="opacity-75" 
-                      fill="currentColor" 
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    />
-                  </svg>
-                  Searching
-                </span>
-              ) : "Ask"}
-            </button>
-          </div>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="What would you like to know?"
+            className="w-full px-6 py-5 text-lg bg-transparent border-none focus:outline-none placeholder:opacity-40"
+            style={{ color: "var(--text-primary)" }}
+            maxLength={500}
+            disabled={isLoading}
+          />
+          <button
+            type="submit"
+            disabled={isLoading || !query.trim()}
+            className="absolute right-3 top-1/2 -translate-y-1/2 px-5 py-2.5 rounded-xl font-medium text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-150"
+            style={{ 
+              background: "var(--accent)",
+            }}
+            onMouseEnter={(e) => {
+              if (!isLoading && query.trim()) {
+                e.currentTarget.style.background = "var(--accent-hover)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--accent)";
+            }}
+          >
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <span>Searching</span>
+              </span>
+            ) : "Ask"}
+          </button>
         </div>
         <p 
-          className="text-xs mt-2 text-center"
-          style={{ color: "var(--text-secondary)" }}
+          className="text-xs mt-3 text-center"
+          style={{ color: "var(--text-tertiary)" }}
         >
-          Press ⌘+Enter to submit
+          ⌘ + Enter to submit
         </p>
       </form>
 
-      {/* Loading Skeleton */}
+      {/* Loading State */}
       {isLoading && (
         <div 
-          className="rounded-xl p-6 animate-fade-in"
+          className="rounded-2xl p-8 animate-fade-in"
           style={{ 
-            background: "var(--card)", 
+            background: "var(--bg-secondary)", 
             border: "1px solid var(--border)" 
           }}
         >
           <div className="space-y-4">
-            <div className="h-4 w-24 rounded skeleton" />
-            <div className="space-y-2">
-              <div className="h-4 w-full rounded skeleton" />
-              <div className="h-4 w-full rounded skeleton" />
-              <div className="h-4 w-3/4 rounded skeleton" />
-            </div>
-            <div className="pt-4 space-y-2">
-              <div className="h-3 w-20 rounded skeleton" />
-              <div className="h-16 w-full rounded skeleton" />
+            <div className="skeleton h-3 w-32" />
+            <div className="space-y-2 pt-2">
+              <div className="skeleton h-4 w-full" />
+              <div className="skeleton h-4 w-full" />
+              <div className="skeleton h-4 w-4/5" />
             </div>
           </div>
         </div>
@@ -124,13 +116,13 @@ export function QueryInterface(): React.ReactElement {
       {/* Error State */}
       {error && (
         <div 
-          className="rounded-xl p-6 text-center animate-fade-in"
+          className="rounded-2xl p-6 text-center animate-fade-in"
           style={{ 
-            background: "var(--card)", 
-            border: "1px solid var(--error)" 
+            background: "var(--bg-secondary)", 
+            border: "1px solid rgba(248, 113, 113, 0.3)" 
           }}
         >
-          <p style={{ color: "var(--error)" }} className="font-medium">
+          <p style={{ color: "var(--error)" }}>
             {error}
           </p>
         </div>

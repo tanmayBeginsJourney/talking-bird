@@ -1,110 +1,102 @@
 "use client";
 
 import { useState } from "react";
+import { api } from "@/lib/api";
 import type { Source } from "@/lib/types";
 
 interface SourceCitationProps {
   source: Source;
+  index: number;
 }
 
-const fileTypeIcons: Record<string, string> = {
-  pdf: "📄",
-  docx: "📝",
-  txt: "📃",
-  default: "📎",
-};
-
-export function SourceCitation({ source }: SourceCitationProps): React.ReactElement {
+export function SourceCitation({ source, index }: SourceCitationProps): React.ReactElement {
   const [expanded, setExpanded] = useState(false);
   
-  // Extract file extension from filename
-  const extension = source.document_name.split(".").pop()?.toLowerCase() ?? "default";
-  const icon = fileTypeIcons[extension] ?? fileTypeIcons.default;
-  
-  // Relevance percentage
   const relevance = Math.round(source.similarity_score * 100);
+  const downloadUrl = api.getDocumentDownloadUrl(source.document_id);
+
+  // Determine relevance color
+  const relevanceColor = relevance >= 75 
+    ? "var(--success)" 
+    : relevance >= 65 
+      ? "var(--warning)" 
+      : "var(--text-tertiary)";
 
   return (
     <div 
-      className="rounded-lg p-4"
+      className="group rounded-xl p-4 transition-colors"
       style={{ 
-        background: "var(--background)", 
-        border: "1px solid var(--border)" 
+        background: "var(--bg-secondary)",
       }}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-lg flex-shrink-0">{icon}</span>
-          <span 
-            className="font-medium truncate"
-            style={{ color: "var(--text-primary)" }}
-            title={source.document_name}
-          >
-            {source.document_name}
-          </span>
-        </div>
-        <div className="flex items-center gap-3 flex-shrink-0">
-          {source.page_number && (
-            <span 
-              className="text-sm"
-              style={{ color: "var(--text-secondary)" }}
+      <div className="flex items-start gap-4">
+        {/* Index */}
+        <span 
+          className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-xs font-mono"
+          style={{ 
+            background: "var(--bg-elevated)", 
+            color: "var(--text-secondary)" 
+          }}
+        >
+          {index}
+        </span>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-2">
+            <a
+              href={downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium truncate transition-colors hover:underline"
+              style={{ color: "var(--text-primary)" }}
+              title={`Download ${source.document_name}`}
             >
-              Page {source.page_number}
+              {source.document_name}
+            </a>
+            
+            {source.page_number && (
+              <span 
+                className="flex-shrink-0 text-xs px-2 py-0.5 rounded"
+                style={{ 
+                  background: "var(--bg-elevated)", 
+                  color: "var(--text-secondary)" 
+                }}
+              >
+                p.{source.page_number}
+              </span>
+            )}
+
+            <span 
+              className="flex-shrink-0 text-xs font-mono"
+              style={{ color: relevanceColor }}
+            >
+              {relevance}%
             </span>
+          </div>
+
+          {/* Excerpt */}
+          <p 
+            className={`text-sm leading-relaxed ${expanded ? "" : "line-clamp-2"}`}
+            style={{ color: "var(--text-secondary)" }}
+          >
+            {source.excerpt}
+          </p>
+
+          {/* Expand toggle */}
+          {source.excerpt.length > 150 && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="mt-2 text-xs font-medium transition-colors"
+              style={{ color: "var(--text-tertiary)" }}
+              onMouseEnter={(e) => e.currentTarget.style.color = "var(--text-secondary)"}
+              onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-tertiary)"}
+            >
+              {expanded ? "Show less" : "Show more"}
+            </button>
           )}
         </div>
-      </div>
-
-      {/* Excerpt */}
-      <div className="mt-3">
-        <p 
-          className={`text-sm leading-relaxed ${expanded ? "" : "line-clamp-2"}`}
-          style={{ color: "var(--text-secondary)" }}
-        >
-          {source.excerpt}
-        </p>
-        {source.excerpt.length > 120 && (
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="text-sm font-medium mt-1 hover:opacity-70"
-            style={{ color: "var(--accent)" }}
-          >
-            {expanded ? "Show less" : "Show more"}
-          </button>
-        )}
-      </div>
-
-      {/* Relevance Bar */}
-      <div className="mt-3 flex items-center gap-2">
-        <span 
-          className="text-xs"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          Relevance
-        </span>
-        <div 
-          className="flex-1 h-1.5 rounded-full overflow-hidden"
-          style={{ background: "var(--border)" }}
-        >
-          <div 
-            className="h-full rounded-full transition-all"
-            style={{ 
-              width: `${relevance}%`,
-              background: relevance >= 75 
-                ? "var(--success)" 
-                : relevance >= 65 
-                  ? "var(--warning)" 
-                  : "var(--text-secondary)"
-            }}
-          />
-        </div>
-        <span 
-          className="text-xs tabular-nums"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          {relevance}%
-        </span>
       </div>
     </div>
   );
