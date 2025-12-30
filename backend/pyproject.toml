@@ -1,0 +1,30 @@
+[project]
+name = "talking-bird-backend"
+version = "1.0.0"
+description = "Talking Bird RAG System Backend"
+requires-python = ">=3.11"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+select = ["E", "F", "I", "N", "UP", "B", "A", "C4", "DTZ", "T10", "PIE"]
+ignore = []
+line-length = 100
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--cov=app --cov-report=html --cov-report=term-missing"
+
+
+
