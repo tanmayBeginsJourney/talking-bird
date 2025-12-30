@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { SourceCitation } from "./SourceCitation";
 import type { QueryResponse } from "@/lib/types";
 
@@ -5,43 +8,107 @@ interface AnswerDisplayProps {
   response: QueryResponse;
 }
 
-const confidenceBadgeStyles = {
-  high: "bg-green-100 text-green-800",
-  medium: "bg-yellow-100 text-yellow-800",
-  low: "bg-red-100 text-red-800",
+const confidenceConfig = {
+  high: { 
+    bg: "#DCFCE7", 
+    text: "#166534", 
+    label: "High confidence" 
+  },
+  medium: { 
+    bg: "#FEF3C7", 
+    text: "#92400E", 
+    label: "Medium confidence" 
+  },
+  low: { 
+    bg: "#FEE2E2", 
+    text: "#991B1B", 
+    label: "Low confidence" 
+  },
 };
 
 export function AnswerDisplay({ response }: AnswerDisplayProps): React.ReactElement {
+  const [sourcesExpanded, setSourcesExpanded] = useState(false);
+  const confidence = confidenceConfig[response.confidence];
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-sm font-medium text-slate-500">Answer</span>
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${confidenceBadgeStyles[response.confidence]}`}
+    <div 
+      className="rounded-xl p-6 animate-fade-in"
+      style={{ 
+        background: "var(--card)", 
+        border: "1px solid var(--border)" 
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <span 
+          className="text-sm font-medium"
+          style={{ color: "var(--text-secondary)" }}
         >
-          {response.confidence} confidence
+          Answer
+        </span>
+        <span
+          className="px-3 py-1 rounded-full text-xs font-medium"
+          style={{ 
+            background: confidence.bg, 
+            color: confidence.text 
+          }}
+        >
+          {confidence.label}
         </span>
       </div>
 
-      <p className="text-slate-800 leading-relaxed mb-6">{response.answer}</p>
+      {/* Answer Text */}
+      <p 
+        className="text-lg leading-relaxed mb-6"
+        style={{ color: "var(--text-primary)" }}
+      >
+        {response.answer}
+      </p>
 
+      {/* Sources Section */}
       {response.sources.length > 0 && (
-        <div>
-          <h3 className="text-sm font-medium text-slate-500 mb-3">Sources</h3>
-          <div className="space-y-3">
-            {response.sources.map((source, index) => (
-              <SourceCitation key={index} source={source} />
-            ))}
-          </div>
+        <div 
+          className="pt-4"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
+          <button
+            onClick={() => setSourcesExpanded(!sourcesExpanded)}
+            className="flex items-center gap-2 w-full text-left group"
+          >
+            <span 
+              className="text-sm font-medium"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Sources ({response.sources.length})
+            </span>
+            <svg 
+              className={`w-4 h-4 transition-transform ${sourcesExpanded ? "rotate-180" : ""}`}
+              style={{ color: "var(--text-secondary)" }}
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {sourcesExpanded && (
+            <div className="mt-4 space-y-3 animate-fade-in">
+              {response.sources.map((source, index) => (
+                <SourceCitation key={index} source={source} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      <p className="text-xs text-slate-400 mt-4">
+      {/* Footer */}
+      <p 
+        className="text-xs mt-6"
+        style={{ color: "var(--text-secondary)" }}
+      >
         Response time: {response.processing_time_ms}ms
       </p>
     </div>
   );
 }
-
-
-
