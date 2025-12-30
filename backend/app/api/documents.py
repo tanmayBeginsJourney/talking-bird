@@ -123,7 +123,6 @@ async def list_documents(
 async def download_document(
     document_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ) -> FileResponse:
     """Download a document file."""
     document = db.query(Document).filter(Document.id == document_id).first()

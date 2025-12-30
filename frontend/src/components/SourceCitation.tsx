@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { api } from "@/lib/api";
 import type { Source } from "@/lib/types";
 
@@ -10,8 +9,6 @@ interface SourceCitationProps {
 }
 
 export function SourceCitation({ source, index }: SourceCitationProps): React.ReactElement {
-  const [expanded, setExpanded] = useState(false);
-  
   const relevance = Math.round(source.similarity_score * 100);
   const downloadUrl = api.getDocumentDownloadUrl(source.document_id);
 
@@ -78,24 +75,11 @@ export function SourceCitation({ source, index }: SourceCitationProps): React.Re
 
           {/* Excerpt */}
           <p 
-            className={`text-sm leading-relaxed ${expanded ? "" : "line-clamp-2"}`}
+            className="text-sm leading-relaxed line-clamp-3"
             style={{ color: "var(--text-secondary)" }}
           >
             {source.excerpt}
           </p>
-
-          {/* Expand toggle */}
-          {source.excerpt.length > 150 && (
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="mt-2 text-xs font-medium transition-colors"
-              style={{ color: "var(--text-tertiary)" }}
-              onMouseEnter={(e) => e.currentTarget.style.color = "var(--text-secondary)"}
-              onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-tertiary)"}
-            >
-              {expanded ? "Show less" : "Show more"}
-            </button>
-          )}
         </div>
       </div>
     </div>
