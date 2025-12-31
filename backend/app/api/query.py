@@ -16,9 +16,13 @@ from app.models.schemas import (
     SourceResponse,
 )
 from app.services.answer_generator import AnswerGenerator
+from app.services.reranker import rerank_chunks
 from app.services.retrieval import RetrieverService
 
 router = APIRouter(prefix="/query", tags=["query"])
+
+# Retrieve more candidates for reranking, then narrow down
+CANDIDATE_POOL_SIZE = 20
 
 
 @router.post("", response_model=QueryResponse)
@@ -30,9 +34,16 @@ async def submit_query(
     """Submit a query and get a grounded answer."""
     start_time = time.time()
     
-    # Retrieve relevant chunks
+    # Retrieve larger candidate pool for reranking
     retriever = RetrieverService()
-    chunks = await retriever.retrieve(query=request.query, top_k=request.max_chunks)
+    candidates = await retriever.retrieve(
+        query=request.query, top_k=CANDIDATE_POOL_SIZE
+    )
+    
+    # Rerank with cross-encoder and take top results
+    chunks = rerank_chunks(
+        query=request.query, chunks=candidates, top_k=request.max_chunks
+    )
     
     if not chunks:
         # No relevant documents found
@@ -65,8 +76,8 @@ async def submit_query(
     
     processing_time_ms = int((time.time() - start_time) * 1000)
     
-    # Calculate average similarity
-    avg_similarity = sum(c.similarity for c in chunks) / len(chunks)
+    # Calculate average similarity (convert numpy types to Python float)
+    avg_similarity = float(sum(c.similarity for c in chunks) / len(chunks))
     
     # Store query in database
     query_record = QueryModel(
@@ -87,7 +98,7 @@ async def submit_query(
         source = QuerySource(
             query_id=query_record.id,
             chunk_id=uuid.UUID(chunk.chunk_id),
-            similarity_score=chunk.similarity,
+            similarity_score=float(chunk.similarity),
         )
         db.add(source)
     
