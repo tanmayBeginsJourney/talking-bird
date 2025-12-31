@@ -26,25 +26,25 @@ const confidenceConfig = {
   },
 };
 
-// Format citations: [1], [2] -> superscript, remove commas between successive
+// Format citations: [1], [2], [1, 2] -> superscript
 function formatAnswerWithCitations(text: string): React.ReactNode[] {
-  // First, clean up comma-separated citations like [1], [2] -> [1][2]
-  const cleaned = text.replace(/\](\s*),(\s*)\[/g, "][");
+  // Match all citation patterns: [1], [1, 2], [1][2], etc.
+  const citationPattern = /(\[\d+(?:\s*,\s*\d+)*\])/g;
   
-  // Split by citation pattern and create elements
-  const parts = cleaned.split(/(\[\d+\])/g);
+  const parts = text.split(citationPattern);
   
   return parts.map((part, i) => {
-    // Check if this is a citation
-    const citationMatch = part.match(/^\[(\d+)\]$/);
-    if (citationMatch) {
+    // Check if this is a citation (single or combined like [1, 2])
+    if (/^\[\d+(?:\s*,\s*\d+)*\]$/.test(part)) {
+      // Extract numbers and format nicely
+      const numbers = part.match(/\d+/g) || [];
       return (
         <sup 
           key={i} 
           className="text-xs font-medium ml-0.5"
           style={{ color: "var(--accent)" }}
         >
-          [{citationMatch[1]}]
+          [{numbers.join(", ")}]
         </sup>
       );
     }
