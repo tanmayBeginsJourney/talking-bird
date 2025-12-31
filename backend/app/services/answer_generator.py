@@ -8,21 +8,18 @@ from app.config import settings
 from app.models.schemas import ConfidenceLevel
 from app.services.retrieval import RetrievedChunk
 
-SYSTEM_PROMPT = """You are Talking Bird, an AI assistant for the Office of Research.
+SYSTEM_PROMPT = """You are Talking Bird, a helpful assistant that answers questions using provided document excerpts.
 
-CRITICAL RULES:
-1. Answer ONLY using the provided document excerpts
-2. NEVER use general knowledge or make assumptions
-3. If the answer isn't explicitly in the documents, respond: "Not sure based on available information."
-4. Always cite sources: [Document Name, Page X]
-5. Do not speculate, compare, or make value judgments
+Your goal: Give clear, accurate answers based ONLY on the excerpts provided. Be conversational but precise.
 
-PROHIBITED:
-- Answering questions not covered in documents
-- Making inferences beyond explicit text
-- Providing opinions or recommendations
-- Using phrases like "generally," "typically," "probably"
-"""
+Guidelines:
+- Synthesize information across excerpts when relevant
+- Use [1], [2], etc. to cite which excerpt you're referencing
+- Keep answers concise - match length to question complexity
+- If information isn't in the excerpts, say "I don't have enough information to answer that."
+- For list questions, use bullet points
+- For explanations, use clear prose
+- Never make up information or use outside knowledge"""
 
 
 @dataclass
@@ -47,15 +44,13 @@ class AnswerGenerator:
         """Generate a grounded answer from retrieved chunks."""
         context = self.build_context(chunks)
         
-        user_message = f"""Based on the following document excerpts, answer the question.
+        user_message = f"""Here are document excerpts, ordered by relevance (most relevant first):
 
-DOCUMENT EXCERPTS:
 {context}
 
-QUESTION: {query}
+Question: {query}
 
-Provide a clear, factual answer citing the specific documents. If the information isn't in the excerpts, say "Not sure based on available information."
-"""
+Answer based only on the excerpts above. Be helpful and concise."""
 
         response = self.client.chat.completions.create(
             model=settings.LLM_MODEL,
@@ -63,11 +58,11 @@ Provide a clear, factual answer citing the specific documents. If the informatio
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_message},
             ],
-            temperature=settings.LLM_TEMPERATURE,
+            temperature=0.15,  # Slightly creative for natural phrasing
             max_tokens=1024,
         )
         
-        answer = response.choices[0].message.content or "Not sure based on available information."
+        answer = response.choices[0].message.content or "I don't have enough information to answer that."
         
         # Calculate confidence
         avg_similarity = sum(c.similarity for c in chunks) / len(chunks) if chunks else 0
@@ -99,8 +94,8 @@ Provide a clear, factual answer citing the specific documents. If the informatio
         """Build context string from retrieved chunks."""
         context_parts = []
         for i, chunk in enumerate(chunks, 1):
-            page_info = f", Page {chunk.page_number}" if chunk.page_number else ""
+            page_info = f" (Page {chunk.page_number})" if chunk.page_number else ""
             context_parts.append(
-                f"[{i}] Source: {chunk.document_name}{page_info}\n{chunk.text_content}\n"
+                f"[{i}] {chunk.document_name}{page_info}:\n{chunk.text_content}\n"
             )
         return "\n".join(context_parts)
