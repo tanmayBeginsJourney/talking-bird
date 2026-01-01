@@ -45,6 +45,7 @@ services:
         condition: service_started
     volumes:
       - ./backend/uploads:/app/uploads
+      - ./backend/app:/app/app  # Mount code for live reload (no rebuild needed)
 
   frontend:
     build:

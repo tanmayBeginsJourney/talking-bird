@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { QueryInterface } from "@/components/QueryInterface";
+import { ChatInterface } from "@/components/ChatInterface";
 import { api } from "@/lib/api";
 
 export default function Home(): React.ReactElement {
@@ -18,7 +18,7 @@ export default function Home(): React.ReactElement {
         api.setToken(response.access_token);
         setIsReady(true);
       } catch (err) {
-        setError("Unable to connect to backend");
+        setError("Unable to connect to backend. Please ensure Docker is running.");
         console.error("Auto-login failed:", err);
       }
     };
@@ -26,75 +26,44 @@ export default function Home(): React.ReactElement {
     void autoLogin();
   }, []);
 
+  if (error) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 max-w-md text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-slate-800 mb-2">Connection Error</h2>
+          <p className="text-slate-600 mb-4">{error}</p>
+          <code className="block bg-slate-100 rounded-lg px-4 py-2 text-sm text-slate-700">
+            docker-compose up -d
+          </code>
+        </div>
+      </main>
+    );
+  }
+
+  if (!isReady) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 bg-slate-600 rounded-full animate-pulse" />
+          <p className="text-slate-600 font-medium">Connecting to Talking Bird...</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <main className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
-      {/* Subtle gradient overlay */}
-      <div 
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          background: "radial-gradient(ellipse at top, rgba(99, 102, 241, 0.08) 0%, transparent 50%)",
-        }}
-      />
-      
-      <div className="relative z-10 max-w-3xl mx-auto px-6 py-20">
-        {/* Header */}
-        <header className="text-center mb-16 animate-fade-in">
-          <h1 
-            className="text-5xl font-semibold mb-3"
-            style={{ color: "var(--text-primary)" }}
-          >
-            Talking Bird
-          </h1>
-          <p 
-            className="text-lg"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            Ask questions about your documents
-          </p>
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-8 px-4">
+      <div className="container mx-auto max-w-6xl">
+        <header className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-slate-800 mb-2">🐦 Talking Bird</h1>
+          <p className="text-slate-600 text-lg">Your AI University Concierge</p>
         </header>
-
-        {/* Main Content */}
-        {error ? (
-          <div 
-            className="text-center p-8 rounded-2xl animate-fade-in"
-            style={{ 
-              background: "var(--bg-secondary)", 
-              border: "1px solid var(--border)" 
-            }}
-          >
-            <p style={{ color: "var(--error)" }} className="font-medium mb-2">
-              {error}
-            </p>
-            <p 
-              className="text-sm"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              Run: docker-compose up -d
-            </p>
-          </div>
-        ) : !isReady ? (
-          <div className="flex items-center justify-center gap-3">
-            <div 
-              className="w-2 h-2 rounded-full animate-pulse"
-              style={{ background: "var(--accent)" }}
-            />
-            <p style={{ color: "var(--text-secondary)" }}>
-              Connecting...
-            </p>
-          </div>
-        ) : (
-          <div className="animate-slide-up">
-            <QueryInterface />
-          </div>
-        )}
-
-        {/* Footer */}
-        <footer 
-          className="text-center mt-20 text-sm"
-          style={{ color: "var(--text-tertiary)" }}
-        >
-          Answers are grounded in uploaded documents only
-        </footer>
+        <ChatInterface />
       </div>
     </main>
   );
