@@ -23,14 +23,14 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "llama-3.3-70b-versatile"
     LLM_TEMPERATURE: float = 0.0
 
-    # Embeddings
-    EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
+    # Embeddings - Using mpnet for better quality (768 dims vs 384)
+    EMBEDDING_MODEL: str = "sentence-transformers/all-mpnet-base-v2"
 
-    # Retrieval
-    TOP_K_CHUNKS: int = 5
-    SIMILARITY_THRESHOLD: float = 0.65
-    CHUNK_SIZE: int = 512
-    CHUNK_OVERLAP: int = 128
+    # Retrieval - More chunks for complex queries
+    TOP_K_CHUNKS: int = 10
+    SIMILARITY_THRESHOLD: float = 0.55
+    CHUNK_SIZE: int = 400
+    CHUNK_OVERLAP: int = 100
 
     # Security
     SECRET_KEY: str = "change-this-in-production"

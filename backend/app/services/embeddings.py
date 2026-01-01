@@ -28,3 +28,5 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     embeddings = model.encode(texts, convert_to_numpy=True)
     return [emb.tolist() for emb in embeddings]
 
+
+
