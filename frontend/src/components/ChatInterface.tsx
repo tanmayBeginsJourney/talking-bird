@@ -68,6 +68,51 @@ const starterQuestions = [
   "What research programs are available?",
 ];
 
+// Helper function to render text with superscript citations (Wikipedia style)
+function renderWithSuperscriptCitations(text: string): React.ReactNode {
+  // Match citation patterns like [1], [2], [1, 2], [1][2], etc.
+  // Also handles removing commas between adjacent citations
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  
+  // First, normalize adjacent citations: [1], [2] or [1],[2] -> [1][2]
+  const normalizedText = text
+    .replace(/\]\s*,\s*\[/g, '][')  // [1], [2] -> [1][2]
+    .replace(/\],\s*\[/g, '][');    // [1],[2] -> [1][2]
+  
+  // Match individual citations [n] or combined [n, m, ...]
+  const citationRegex = /\[(\d+(?:\s*,\s*\d+)*)\]/g;
+  let match;
+  
+  while ((match = citationRegex.exec(normalizedText)) !== null) {
+    // Add text before the citation
+    if (match.index > lastIndex) {
+      parts.push(normalizedText.slice(lastIndex, match.index));
+    }
+    
+    // Parse the citation numbers and render as superscript
+    const numbers = match[1].split(/\s*,\s*/).map(n => n.trim());
+    parts.push(
+      <sup
+        key={match.index}
+        className="text-[10px] font-semibold text-slate-500 ml-0.5 cursor-default hover:text-slate-700 transition-colors"
+        title={`Source ${numbers.join(', ')}`}
+      >
+        {numbers.join('')}
+      </sup>
+    );
+    
+    lastIndex = match.index + match[0].length;
+  }
+  
+  // Add remaining text after the last citation
+  if (lastIndex < normalizedText.length) {
+    parts.push(normalizedText.slice(lastIndex));
+  }
+  
+  return parts.length > 0 ? parts : text;
+}
+
 const confidenceColors = {
   high: "bg-green-100 text-green-700 border-green-200",
   medium: "bg-yellow-100 text-yellow-700 border-yellow-200",
@@ -237,7 +282,9 @@ export function ChatInterface(): React.ReactElement {
                     )}
                   >
                     <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
-                      {message.content}
+                      {message.role === "assistant" 
+                        ? renderWithSuperscriptCitations(message.content)
+                        : message.content}
                     </p>
                     
                     {message.role === "assistant" && message.sources && message.sources.length > 0 && (
