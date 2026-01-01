@@ -15,6 +15,15 @@ export interface SourceResponse {
 // Alias for Source (used in SourceCitation component)
 export type Source = SourceResponse;
 
+// Grouped sources - multiple pages/excerpts from the same document
+export interface GroupedSource {
+  document_id: string;
+  document_name: string;
+  pages: (number | null)[];
+  excerpts: { page: number | null; excerpt: string; similarity_score: number }[];
+  avg_similarity_score: number;
+}
+
 export interface QueryRequest {
   query: string;
   max_chunks?: number;

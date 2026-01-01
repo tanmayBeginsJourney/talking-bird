@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Bot, User, Loader2, Download } from "lucide-react";
 import { sendQuery } from "@/lib/api";
-import type { QueryResponse, SourceResponse } from "@/lib/types";
+import type { QueryResponse, SourceResponse, GroupedSource } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { DownloadModal } from "./DownloadModal";
 
@@ -15,6 +15,51 @@ interface Message {
   sources?: SourceResponse[];
   confidence?: "high" | "medium" | "low";
   timestamp: Date;
+}
+
+// Helper function to group sources by document
+function groupSourcesByDocument(sources: SourceResponse[]): GroupedSource[] {
+  const grouped = new Map<string, GroupedSource>();
+
+  for (const source of sources) {
+    const existing = grouped.get(source.document_id);
+    if (existing) {
+      if (!existing.pages.includes(source.page_number)) {
+        existing.pages.push(source.page_number);
+      }
+      existing.excerpts.push({
+        page: source.page_number,
+        excerpt: source.excerpt,
+        similarity_score: source.similarity_score,
+      });
+      // Recalculate average
+      existing.avg_similarity_score =
+        existing.excerpts.reduce((sum, e) => sum + e.similarity_score, 0) /
+        existing.excerpts.length;
+    } else {
+      grouped.set(source.document_id, {
+        document_id: source.document_id,
+        document_name: source.document_name,
+        pages: [source.page_number],
+        excerpts: [
+          {
+            page: source.page_number,
+            excerpt: source.excerpt,
+            similarity_score: source.similarity_score,
+          },
+        ],
+        avg_similarity_score: source.similarity_score,
+      });
+    }
+  }
+
+  // Sort pages within each group
+  for (const group of grouped.values()) {
+    group.pages.sort((a, b) => (a ?? 0) - (b ?? 0));
+    group.excerpts.sort((a, b) => (a.page ?? 0) - (b.page ?? 0));
+  }
+
+  return Array.from(grouped.values());
 }
 
 const starterQuestions = [
@@ -34,19 +79,19 @@ export function ChatInterface(): React.ReactElement {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedSource, setSelectedSource] = useState<SourceResponse | null>(null);
+  const [selectedGroupedSource, setSelectedGroupedSource] = useState<GroupedSource | null>(null);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSourceClick = (source: SourceResponse) => {
-    setSelectedSource(source);
+  const handleSourceClick = (groupedSource: GroupedSource) => {
+    setSelectedGroupedSource(groupedSource);
     setIsDownloadModalOpen(true);
   };
 
   const handleCloseDownloadModal = () => {
     setIsDownloadModalOpen(false);
-    setSelectedSource(null);
+    setSelectedGroupedSource(null);
   };
 
   const scrollToBottom = () => {
@@ -198,22 +243,31 @@ export function ChatInterface(): React.ReactElement {
                     {message.role === "assistant" && message.sources && message.sources.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-slate-200">
                         <div className="flex flex-wrap gap-2 mb-2">
-                          {message.sources.map((source, idx) => (
-                            <motion.button
-                              key={idx}
-                              initial={{ opacity: 0, scale: 0.9 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => handleSourceClick(source)}
-                              className="px-3 py-1.5 text-xs font-medium bg-white border border-slate-300 rounded-full text-slate-700 hover:bg-slate-100 hover:border-slate-400 transition-colors flex items-center gap-1.5 group"
-                              title={`Click to download: ${source.document_name}${source.page_number ? ` - Page ${source.page_number}` : ""}`}
-                            >
-                              <Download className="w-3 h-3 text-slate-400 group-hover:text-slate-600 transition-colors" />
-                              {source.document_name}
-                              {source.page_number && ` (p.${source.page_number})`}
-                            </motion.button>
-                          ))}
+                          {groupSourcesByDocument(message.sources).map((groupedSource) => {
+                            const pageNumbers = groupedSource.pages
+                              .filter((p): p is number => p !== null)
+                              .sort((a, b) => a - b);
+                            const pagesDisplay = pageNumbers.length > 0
+                              ? ` (p.${pageNumbers.join(", ")})`
+                              : "";
+                            
+                            return (
+                              <motion.button
+                                key={groupedSource.document_id}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handleSourceClick(groupedSource)}
+                                className="px-3 py-1.5 text-xs font-medium bg-white border border-slate-300 rounded-full text-slate-700 hover:bg-slate-100 hover:border-slate-400 transition-colors flex items-center gap-1.5 group"
+                                title={`Click to download: ${groupedSource.document_name}${pagesDisplay}`}
+                              >
+                                <Download className="w-3 h-3 text-slate-400 group-hover:text-slate-600 transition-colors" />
+                                {groupedSource.document_name}
+                                {pagesDisplay}
+                              </motion.button>
+                            );
+                          })}
                         </div>
                         {message.confidence && (
                           <span
@@ -306,7 +360,7 @@ export function ChatInterface(): React.ReactElement {
 
       {/* Download Modal */}
       <DownloadModal
-        source={selectedSource}
+        groupedSource={selectedGroupedSource}
         isOpen={isDownloadModalOpen}
         onClose={handleCloseDownloadModal}
       />
