@@ -22,7 +22,8 @@ from app.services.retrieval import RetrieverService
 router = APIRouter(prefix="/query", tags=["query"])
 
 # Retrieve more candidates for reranking, then narrow down
-CANDIDATE_POOL_SIZE = 20
+# Larger pool = better recall for statistical/numerical queries
+CANDIDATE_POOL_SIZE = 30
 
 
 @router.post("", response_model=QueryResponse)

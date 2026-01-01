@@ -40,8 +40,8 @@ class RetrieverService:
     async def retrieve(
         self,
         query: str,
-        top_k: int = 5,
-        similarity_threshold: float = 0.35,  # Lower threshold for table/structured content
+        top_k: int = 10,
+        similarity_threshold: float = 0.30,  # Lower threshold for better recall on statistics
     ) -> list[RetrievedChunk]:
         """
         Retrieve most relevant document chunks using hybrid search with query expansion.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Bot, User, Loader2, Download } from "lucide-react";
 import { sendQuery } from "@/lib/api";
@@ -54,7 +54,8 @@ function groupSourcesByDocument(sources: SourceResponse[]): GroupedSource[] {
   }
 
   // Sort pages within each group
-  for (const group of grouped.values()) {
+  const groupedArray = Array.from(grouped.values());
+  for (const group of groupedArray) {
     group.pages.sort((a, b) => (a ?? 0) - (b ?? 0));
     group.excerpts.sort((a, b) => (a.page ?? 0) - (b.page ?? 0));
   }
@@ -129,17 +130,17 @@ export function ChatInterface(): React.ReactElement {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSourceClick = (groupedSource: GroupedSource) => {
+  const handleSourceClick = (groupedSource: GroupedSource): void => {
     setSelectedGroupedSource(groupedSource);
     setIsDownloadModalOpen(true);
   };
 
-  const handleCloseDownloadModal = () => {
+  const handleCloseDownloadModal = (): void => {
     setIsDownloadModalOpen(false);
     setSelectedGroupedSource(null);
   };
 
-  const scrollToBottom = () => {
+  const scrollToBottom = (): void => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -147,7 +148,7 @@ export function ChatInterface(): React.ReactElement {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
@@ -163,37 +164,39 @@ export function ChatInterface(): React.ReactElement {
     setIsLoading(true);
     setError(null);
 
-    try {
-      const response: QueryResponse = await sendQuery(userMessage.content);
-      
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: response.answer,
-        sources: response.sources,
-        confidence: response.confidence,
-        timestamp: new Date(),
-      };
+    void (async () => {
+      try {
+        const response: QueryResponse = await sendQuery(userMessage.content);
+        
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: response.answer,
+          sources: response.sources,
+          confidence: response.confidence,
+          timestamp: new Date(),
+        };
 
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to get response";
-      setError(errorMessage);
-      
-      const errorMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: `Sorry, I encountered an error: ${errorMessage}`,
-        timestamp: new Date(),
-      };
-      
-      setMessages((prev) => [...prev, errorMsg]);
-    } finally {
-      setIsLoading(false);
-    }
+        setMessages((prev) => [...prev, assistantMessage]);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to get response";
+        setError(errorMessage);
+        
+        const errorMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `Sorry, I encountered an error: ${errorMessage}`,
+          timestamp: new Date(),
+        };
+        
+        setMessages((prev) => [...prev, errorMsg]);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   };
 
-  const handleStarterQuestion = async (question: string) => {
+  const handleStarterQuestion = (question: string): void => {
     setInput(question);
     // Trigger submit after a brief delay to allow input to update
     setTimeout(() => {

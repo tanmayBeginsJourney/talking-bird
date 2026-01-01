@@ -18,21 +18,23 @@ export function DownloadModal({ groupedSource, isOpen, onClose }: DownloadModalP
 
   if (!groupedSource) return null;
 
-  const handleDownload = async () => {
-    setIsDownloading(true);
-    setError(null);
+  const handleDownload = (): void => {
+    void (async () => {
+      setIsDownloading(true);
+      setError(null);
 
-    try {
-      await downloadDocument(groupedSource.document_id, groupedSource.document_name);
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to download document");
-    } finally {
-      setIsDownloading(false);
-    }
+      try {
+        await downloadDocument(groupedSource.document_id, groupedSource.document_name);
+        onClose();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to download document");
+      } finally {
+        setIsDownloading(false);
+      }
+    })();
   };
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
+  const handleBackdropClick = (e: React.MouseEvent): void => {
     if (e.target === e.currentTarget) {
       onClose();
     }
@@ -118,7 +120,7 @@ export function DownloadModal({ groupedSource, isOpen, onClose }: DownloadModalP
                       </div>
                     )}
                     <p className="text-sm text-slate-600 leading-relaxed">
-                      "{excerpt.excerpt}"
+                      &ldquo;{excerpt.excerpt}&rdquo;
                     </p>
                   </motion.div>
                 ))}

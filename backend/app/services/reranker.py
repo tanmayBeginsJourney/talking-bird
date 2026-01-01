@@ -7,8 +7,9 @@ from app.services.retrieval import RetrievedChunk
 # Lazy-loaded cross-encoder model
 _cross_encoder: CrossEncoder | None = None
 
-# ms-marco-MiniLM-L-6-v2 is fast and effective for reranking
-CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+# ms-marco-MiniLM-L-12-v2 is more accurate (12 layers vs 6)
+# Trade-off: ~2x slower but better relevance scoring
+CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-12-v2"
 
 
 def get_cross_encoder() -> CrossEncoder:
@@ -22,7 +23,7 @@ def get_cross_encoder() -> CrossEncoder:
 def rerank_chunks(
     query: str,
     chunks: list[RetrievedChunk],
-    top_k: int = 5,
+    top_k: int = 8,
 ) -> list[RetrievedChunk]:
     """
     Rerank retrieved chunks using a cross-encoder model.
@@ -74,5 +75,6 @@ def rerank_chunks(
         )
 
     return reranked
+
 
 
