@@ -19,8 +19,21 @@ Document-grounded AI assistant for Office of Research. Answers queries using **o
 | Database | PostgreSQL 16 |
 | Vector DB | Qdrant |
 | LLM | Groq (Llama 3.3 70B) - **FREE** |
-| Embeddings | sentence-transformers/all-MiniLM-L6-v2 |
+| Embeddings | sentence-transformers/all-mpnet-base-v2 (768 dims) |
+| Reranking | cross-encoder/ms-marco-MiniLM-L-12-v2 |
 | Frontend | Next.js 14 + TypeScript + Tailwind |
+
+## RAG Pipeline
+
+```
+Query → Query Expansion (LLM) → Hybrid Search (Vector + BM25) → RRF Fusion → Cross-Encoder Reranking → Answer Generation
+```
+
+1. **Query Expansion**: LLM generates 2 alternative phrasings for better recall
+2. **Hybrid Search**: Combines semantic (vector) and lexical (BM25) search
+3. **Reciprocal Rank Fusion**: Merges rankings from both search methods
+4. **Cross-Encoder Reranking**: Re-scores top candidates for precision
+5. **Grounded Generation**: LLM answers using only retrieved chunks with citations
 
 ---
 
@@ -166,11 +179,14 @@ GROQ_API_KEY=gsk_...              # Get from console.groq.com
 # Database (defaults work with Docker)
 DATABASE_URL=postgresql://postgres:postgres@postgres:5432/talkingbird
 
+# Embeddings
+EMBEDDING_MODEL=sentence-transformers/all-mpnet-base-v2
+
 # Retrieval tuning
-TOP_K_CHUNKS=5                    # Chunks to retrieve per query
-SIMILARITY_THRESHOLD=0.65         # Min similarity (0-1)
-CHUNK_SIZE=512                    # Characters per chunk
-CHUNK_OVERLAP=128                 # Overlap between chunks
+TOP_K_CHUNKS=10                   # Chunks to retrieve per query
+SIMILARITY_THRESHOLD=0.55         # Min similarity (0-1)
+CHUNK_SIZE=400                    # Characters per chunk
+CHUNK_OVERLAP=100                 # Overlap between chunks
 
 # Security (change in production!)
 SECRET_KEY=change-this-in-production
